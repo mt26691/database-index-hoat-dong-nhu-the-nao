@@ -7,6 +7,9 @@ trên nguyenly.dev.
 Mọi con số trong khoá (số page, số dòng đã kiểm tra, thời gian chạy) đều đo bằng đúng những file
 ở đây, trên PostgreSQL 18. Bạn chạy lại được trên máy mình. Chỉ cần Docker.
 
+Hướng dẫn từng bước có trong bài cuối của khoá:
+[Repo thực hành: tự chạy lại mọi phép đo trong khoá](https://nguyenly.dev/khoa-hoc/database-index-hoat-dong-nhu-the-nao/repo-thuc-hanh).
+
 ## Dựng bảng 5 triệu xe
 
 ```bash
