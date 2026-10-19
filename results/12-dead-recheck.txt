@@ -1,0 +1,43 @@
+NOTICE:  table "b" does not exist, skipping
+DROP TABLE
+SELECT 200000
+ALTER TABLE
+CREATE INDEX
+CREATE INDEX
+VACUUM
+CREATE FUNCTION
+  buoc   | heap  | tuple_count | dead_tuple_count | free_pct | normal | redirect | dead_lp | unused 
+---------+-------+-------------+------------------+----------+--------+----------+---------+--------
+ ban đầu | 61 MB |      200000 |                0 |        3 | 200000 |        0 |       0 |      0
+
+UPDATE 200000
+     buoc     |  heap  | tuple_count | dead_tuple_count | free_pct | normal | redirect | dead_lp | unused 
+--------------+--------+-------------+------------------+----------+--------+----------+---------+--------
+ sau UPDATE 1 | 120 MB |      200000 |           200000 |        3 | 400000 |        0 |       0 |      0
+
+UPDATE 200000
+     buoc     |  heap  | tuple_count | dead_tuple_count | free_pct | normal | redirect | dead_lp | unused 
+--------------+--------+-------------+------------------+----------+--------+----------+---------+--------
+ sau UPDATE 2 | 180 MB |      200000 |           200000 |       35 | 400000 |        0 |  200000 |      0
+
+UPDATE 200000
+     buoc     |  heap  | tuple_count | dead_tuple_count | free_pct | normal | redirect | dead_lp | unused 
+--------------+--------+-------------+------------------+----------+--------+----------+---------+--------
+ sau UPDATE 3 | 240 MB |      200000 |           200000 |       51 | 400000 |        0 |  400000 |      0
+
+VACUUM
+    buoc    |  heap  | tuple_count | dead_tuple_count | free_pct | normal | redirect | dead_lp | unused 
+------------+--------+-------------+------------------+----------+--------+----------+---------+--------
+ sau VACUUM | 240 MB |      200000 |                0 |       75 | 200000 |        0 |       0 |  23150
+
+ price_idx | plate_idx 
+-----------+-----------
+ 7040 kB   | 12 MB
+
+UPDATE 200000
+   buoc   |  heap  | price_idx | plate_idx 
+----------+--------+-----------+-----------
+ UPDATE 4 | 240 MB | 7040 kB   | 12 MB
+
+DROP TABLE
+DROP FUNCTION

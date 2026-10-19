@@ -1,0 +1,128 @@
+DROP INDEX IF EXISTS vehicles_unsold_idx, vehicles_plate_norm_idx, vehicles_prov_listed_idx,
+  vehicles_province_idx, vehicles_price_idx, vehicles_plate_price_idx;
+NOTICE:  index "vehicles_prov_listed_idx" does not exist, skipping
+NOTICE:  index "vehicles_province_idx" does not exist, skipping
+NOTICE:  index "vehicles_price_idx" does not exist, skipping
+NOTICE:  index "vehicles_plate_price_idx" does not exist, skipping
+DROP INDEX
+VACUUM (ANALYZE) vehicles;
+VACUUM
+SELECT indexrelid::regclass AS index, pg_size_pretty(pg_relation_size(indexrelid)) AS size
+FROM pg_index WHERE indrelid = 'vehicles'::regclass;
+       index        |  size  
+--------------------+--------
+ vehicles_pkey      | 107 MB
+ vehicles_plate_idx | 150 MB
+(2 rows)
+
+EXPLAIN (ANALYZE, BUFFERS)
+SELECT id, plate, price_vnd, listed_at FROM vehicles
+WHERE province = 'Đà Nẵng' AND sold_at IS NULL
+ORDER BY listed_at DESC LIMIT 20;
+                                                                   QUERY PLAN                                                                   
+------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=219863.40..219865.73 rows=20 width=35) (actual time=135.064..136.510 rows=20.00 loops=1)
+   Buffers: shared hit=332 read=192052
+   ->  Gather Merge  (cost=219863.40..225259.30 rows=46330 width=35) (actual time=133.249..134.694 rows=20.00 loops=1)
+         Workers Planned: 2
+         Workers Launched: 2
+         Buffers: shared hit=332 read=192052
+         ->  Sort  (cost=218863.38..218911.64 rows=19304 width=35) (actual time=128.384..128.385 rows=13.67 loops=3)
+               Sort Key: listed_at DESC
+               Sort Method: top-N heapsort  Memory: 27kB
+               Buffers: shared hit=332 read=192052
+               Worker 0:  Sort Method: top-N heapsort  Memory: 27kB
+               Worker 1:  Sort Method: top-N heapsort  Memory: 27kB
+               ->  Parallel Seq Scan on vehicles  (cost=0.00..218349.71 rows=19304 width=35) (actual time=1.320..127.098 rows=15473.33 loops=3)
+                     Filter: ((sold_at IS NULL) AND (province = 'Đà Nẵng'::text))
+                     Rows Removed by Filter: 1651193
+                     Buffers: shared hit=256 read=192052
+ Planning:
+   Buffers: shared hit=55 read=4
+ Planning Time: 0.190 ms
+ JIT:
+   Functions: 13
+   Options: Inlining false, Optimization false, Expressions true, Deforming true
+   Timing: Generation 0.363 ms (Deform 0.188 ms), Inlining 0.000 ms, Optimization 0.355 ms, Emission 5.180 ms, Total 5.898 ms
+ Execution Time: 145.065 ms
+(24 rows)
+
+SELECT count(*) AS actual_unsold_danang FROM vehicles WHERE province = 'Đà Nẵng' AND sold_at IS NULL;
+ actual_unsold_danang 
+----------------------
+                46420
+(1 row)
+
+Timing is on.
+CREATE INDEX CONCURRENTLY vehicles_unsold_idx ON vehicles (province, listed_at DESC) WHERE sold_at IS NULL;
+CREATE INDEX
+Time: 603.748 ms
+Timing is off.
+ANALYZE vehicles;
+ANALYZE
+SELECT pg_size_pretty(pg_relation_size('vehicles_unsold_idx')) AS new_index_size;
+ new_index_size 
+----------------
+ 28 MB
+(1 row)
+
+EXPLAIN (ANALYZE, BUFFERS)
+SELECT id, plate, price_vnd, listed_at FROM vehicles
+WHERE province = 'Đà Nẵng' AND sold_at IS NULL
+ORDER BY listed_at DESC LIMIT 20;
+                                                                    QUERY PLAN                                                                    
+--------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=0.42..71.35 rows=20 width=35) (actual time=0.008..0.020 rows=20.00 loops=1)
+   Buffers: shared hit=22
+   ->  Index Scan using vehicles_unsold_idx on vehicles  (cost=0.42..165956.84 rows=46801 width=35) (actual time=0.007..0.019 rows=20.00 loops=1)
+         Index Cond: (province = 'Đà Nẵng'::text)
+         Index Searches: 1
+         Buffers: shared hit=22
+ Planning:
+   Buffers: shared hit=37 read=1
+ Planning Time: 0.080 ms
+ Execution Time: 0.025 ms
+(10 rows)
+
+BEGIN;
+BEGIN
+EXPLAIN (ANALYZE, BUFFERS, WAL, COSTS OFF)
+UPDATE vehicles SET sold_at = now()
+WHERE id = (SELECT id FROM vehicles WHERE province = 'Đà Nẵng' AND sold_at IS NULL ORDER BY listed_at DESC LIMIT 1);
+                                                       QUERY PLAN                                                       
+------------------------------------------------------------------------------------------------------------------------
+ Update on vehicles (actual time=0.638..0.638 rows=0.00 loops=1)
+   Buffers: shared hit=12 read=6 dirtied=4
+   WAL: records=3 fpi=4 bytes=23480
+   InitPlan 1
+     ->  Limit (actual time=0.004..0.004 rows=1.00 loops=1)
+           Buffers: shared hit=4
+           ->  Index Scan using vehicles_unsold_idx on vehicles vehicles_1 (actual time=0.004..0.004 rows=1.00 loops=1)
+                 Index Cond: (province = 'Đà Nẵng'::text)
+                 Index Searches: 1
+                 Buffers: shared hit=4
+   ->  Index Scan using vehicles_pkey on vehicles (actual time=0.109..0.110 rows=1.00 loops=1)
+         Index Cond: (id = (InitPlan 1).col1)
+         Index Searches: 1
+         Buffers: shared hit=5 read=3
+ Planning Time: 0.034 ms
+ Execution Time: 0.676 ms
+(16 rows)
+
+ROLLBACK;
+ROLLBACK
+EXPLAIN SELECT id FROM vehicles WHERE province = 'Đà Nẵng' ORDER BY listed_at DESC LIMIT 20;
+                                          QUERY PLAN                                          
+----------------------------------------------------------------------------------------------
+ Limit  (cost=222701.77..222704.10 rows=20 width=16)
+   ->  Gather Merge  (cost=222701.77..257913.43 rows=302333 width=16)
+         Workers Planned: 2
+         ->  Sort  (cost=221701.75..222016.68 rows=125972 width=16)
+               Sort Key: listed_at DESC
+               ->  Parallel Seq Scan on vehicles  (cost=0.00..218349.68 rows=125972 width=16)
+                     Filter: (province = 'Đà Nẵng'::text)
+ JIT:
+   Functions: 5
+   Options: Inlining false, Optimization false, Expressions true, Deforming true
+(10 rows)
+

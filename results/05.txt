@@ -1,0 +1,88 @@
+SELECT plate AS p FROM vehicles WHERE id = 12345 
+EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM vehicles WHERE plate = '47P-600.55';
+                                                            QUERY PLAN                                                            
+----------------------------------------------------------------------------------------------------------------------------------
+ Index Scan using vehicles_plate_idx on vehicles  (cost=0.43..8.45 rows=1 width=267) (actual time=0.019..0.019 rows=1.00 loops=1)
+   Index Cond: (plate = '47P-600.55'::text)
+   Index Searches: 1
+   Buffers: shared hit=4
+ Planning:
+   Buffers: shared hit=41
+ Planning Time: 0.049 ms
+ Execution Time: 0.034 ms
+(8 rows)
+
+SELECT ctid, id, brand, model, price_vnd FROM vehicles WHERE plate = '47P-600.55';
+   ctid   |  id   | brand | model  | price_vnd 
+----------+-------+-------+--------+-----------
+ (474,21) | 12345 | Honda | Ranger | 205000000
+(1 row)
+
+SELECT count(*) AS rows, count(DISTINCT (ctid::text::point)[0]) AS heap_pages
+FROM vehicles WHERE plate >= '47P-600' AND plate < '47P-700';
+ rows | heap_pages 
+------+------------
+  214 |        172
+(1 row)
+
+SELECT plate, ctid FROM vehicles WHERE plate >= '47P-600' AND plate < '47P-700' ORDER BY plate LIMIT 8;
+   plate    |    ctid     
+------------+-------------
+ 47P-600.36 | (141401,18)
+ 47P-600.55 | (474,21)
+ 47P-601.04 | (110715,26)
+ 47P-601.72 | (80030,8)
+ 47P-602.21 | (190271,13)
+ 47P-602.40 | (49344,16)
+ 47P-602.89 | (159585,21)
+ 47P-603.08 | (18658,24)
+(8 rows)
+
+SET enable_bitmapscan = off;
+SET
+EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM vehicles WHERE plate >= '47P-600' AND plate < '47P-700';
+                                                             QUERY PLAN                                                             
+------------------------------------------------------------------------------------------------------------------------------------
+ Index Scan using vehicles_plate_idx on vehicles  (cost=0.43..8.45 rows=1 width=267) (actual time=0.029..0.085 rows=214.00 loops=1)
+   Index Cond: ((plate >= '47P-600'::text) AND (plate < '47P-700'::text))
+   Index Searches: 1
+   Buffers: shared hit=218
+ Planning Time: 0.031 ms
+ Execution Time: 0.095 ms
+(6 rows)
+
+RESET enable_bitmapscan;
+RESET
+SELECT count(*) AS rows, count(DISTINCT (ctid::text::point)[0]) AS heap_pages
+FROM vehicles WHERE id BETWEEN 100000 AND 100213;
+ rows | heap_pages 
+------+------------
+  214 |          9
+(1 row)
+
+SET enable_bitmapscan = off;
+SET
+EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM vehicles WHERE id BETWEEN 100000 AND 100213;
+                                                            QUERY PLAN                                                            
+----------------------------------------------------------------------------------------------------------------------------------
+ Index Scan using vehicles_pkey on vehicles  (cost=0.43..19.45 rows=201 width=267) (actual time=0.007..0.021 rows=214.00 loops=1)
+   Index Cond: ((id >= 100000) AND (id <= 100213))
+   Index Searches: 1
+   Buffers: shared hit=12
+ Planning Time: 0.018 ms
+ Execution Time: 0.030 ms
+(6 rows)
+
+RESET enable_bitmapscan;
+RESET
+EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM vehicles WHERE plate >= '47P-600' AND plate < '47P-700';
+                                                             QUERY PLAN                                                             
+------------------------------------------------------------------------------------------------------------------------------------
+ Index Scan using vehicles_plate_idx on vehicles  (cost=0.43..8.45 rows=1 width=267) (actual time=0.029..0.082 rows=214.00 loops=1)
+   Index Cond: ((plate >= '47P-600'::text) AND (plate < '47P-700'::text))
+   Index Searches: 1
+   Buffers: shared hit=218
+ Planning Time: 0.021 ms
+ Execution Time: 0.092 ms
+(6 rows)
+

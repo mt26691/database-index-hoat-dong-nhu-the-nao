@@ -1,0 +1,116 @@
+DROP TABLE IF EXISTS vehicles_10k, vehicles_200k;
+DROP TABLE
+CREATE TABLE vehicles_10k  AS SELECT * FROM vehicles WHERE id <= 10000;
+SELECT 10000
+CREATE TABLE vehicles_200k AS SELECT * FROM vehicles WHERE id <= 200000;
+SELECT 200000
+VACUUM (ANALYZE) vehicles_10k, vehicles_200k;
+VACUUM
+SELECT plate AS p FROM vehicles WHERE id = 5000 
+Tìm biển số 25F-950.00
+SELECT 'vehicles_10k' AS bang, (SELECT count(*) FROM vehicles_10k) AS so_dong,
+       pg_relation_size('vehicles_10k') / 8192 AS so_page, pg_size_pretty(pg_relation_size('vehicles_10k')) AS dung_luong
+UNION ALL SELECT 'vehicles_200k', (SELECT count(*) FROM vehicles_200k),
+       pg_relation_size('vehicles_200k') / 8192, pg_size_pretty(pg_relation_size('vehicles_200k'))
+UNION ALL SELECT 'vehicles', (SELECT count(*) FROM vehicles),
+       pg_relation_size('vehicles') / 8192, pg_size_pretty(pg_relation_size('vehicles'));
+     bang      | so_dong | so_page | dung_luong 
+---------------+---------+---------+------------
+ vehicles_10k  |   10000 |     385 | 3080 kB
+ vehicles_200k |  200000 |    7744 | 61 MB
+ vehicles      | 5000000 |  192308 | 1502 MB
+(3 rows)
+
+SELECT * FROM vehicles_10k  WHERE plate = '25F-950.00';
+  id  |   plate    | province | brand  | model | year | mileage_km | price_vnd  | fuel |        listed_at         |            sold_at            |                                                                         seller_note                                                                          
+------+------------+----------+--------+-------+------+------------+------------+------+--------------------------+-------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+ 5000 | 25F-950.00 | TP.HCM   | Toyota | Vios  | 2018 |      98386 | 1882000000 | xăng | 2019-01-03 19:53:45.6+07 | 2019-01-17 16:35:55.250593+07 | Xe chính chủ, bảo dưỡng định kỳ, nội thất còn mới. Ghi chú người bán số 5000 ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ...
+(1 row)
+
+EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM vehicles_10k  WHERE plate = '25F-950.00';
+                                                 QUERY PLAN                                                  
+-------------------------------------------------------------------------------------------------------------
+ Seq Scan on vehicles_10k  (cost=0.00..510.00 rows=1 width=264) (actual time=0.138..0.258 rows=1.00 loops=1)
+   Filter: (plate = '25F-950.00'::text)
+   Rows Removed by Filter: 9999
+   Buffers: shared hit=385
+ Planning Time: 0.043 ms
+ Execution Time: 0.262 ms
+(6 rows)
+
+SELECT * FROM vehicles_200k WHERE plate = '25F-950.00';
+  id  |   plate    | province | brand  | model | year | mileage_km | price_vnd  | fuel |        listed_at         |            sold_at            |                                                                         seller_note                                                                          
+------+------------+----------+--------+-------+------+------------+------------+------+--------------------------+-------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+ 5000 | 25F-950.00 | TP.HCM   | Toyota | Vios  | 2018 |      98386 | 1882000000 | xăng | 2019-01-03 19:53:45.6+07 | 2019-01-17 16:35:55.250593+07 | Xe chính chủ, bảo dưỡng định kỳ, nội thất còn mới. Ghi chú người bán số 5000 ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ...
+(1 row)
+
+EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM vehicles_200k WHERE plate = '25F-950.00';
+                                                          QUERY PLAN                                                          
+------------------------------------------------------------------------------------------------------------------------------
+ Gather  (cost=1000.00..9785.77 rows=1 width=266) (actual time=0.663..10.287 rows=1.00 loops=1)
+   Workers Planned: 2
+   Workers Launched: 2
+   Buffers: shared hit=1431 read=6313
+   ->  Parallel Seq Scan on vehicles_200k  (cost=0.00..8785.67 rows=1 width=266) (actual time=1.387..4.131 rows=0.33 loops=3)
+         Filter: (plate = '25F-950.00'::text)
+         Rows Removed by Filter: 66666
+         Buffers: shared hit=1431 read=6313
+ Planning Time: 0.025 ms
+ Execution Time: 10.299 ms
+(10 rows)
+
+SELECT * FROM vehicles      WHERE plate = '25F-950.00';
+  id  |   plate    | province | brand  | model | year | mileage_km | price_vnd  | fuel |        listed_at         |            sold_at            |                                                                         seller_note                                                                          
+------+------------+----------+--------+-------+------+------------+------------+------+--------------------------+-------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+ 5000 | 25F-950.00 | TP.HCM   | Toyota | Vios  | 2018 |      98386 | 1882000000 | xăng | 2019-01-03 19:53:45.6+07 | 2019-01-17 16:35:55.250593+07 | Xe chính chủ, bảo dưỡng định kỳ, nội thất còn mới. Ghi chú người bán số 5000 ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ...
+(1 row)
+
+EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM vehicles      WHERE plate = '25F-950.00';
+                                                          QUERY PLAN                                                           
+-------------------------------------------------------------------------------------------------------------------------------
+ Gather  (cost=1000.00..219349.54 rows=1 width=267) (actual time=1.816..330.272 rows=1.00 loops=1)
+   Workers Planned: 2
+   Workers Launched: 2
+   Buffers: shared hit=416 read=191892
+   ->  Parallel Seq Scan on vehicles  (cost=0.00..218349.44 rows=1 width=267) (actual time=214.004..322.947 rows=0.33 loops=3)
+         Filter: (plate = '25F-950.00'::text)
+         Rows Removed by Filter: 1666666
+         Buffers: shared hit=416 read=191892
+ Planning Time: 0.032 ms
+ JIT:
+   Functions: 6
+   Options: Inlining false, Optimization false, Expressions true, Deforming true
+   Timing: Generation 0.237 ms (Deform 0.055 ms), Inlining 0.000 ms, Optimization 0.216 ms, Emission 3.675 ms, Total 4.128 ms
+ Execution Time: 330.371 ms
+(14 rows)
+
+SET max_parallel_workers_per_gather = 0;
+SET
+EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM vehicles WHERE plate = '25F-950.00';
+                                                          QUERY PLAN                                                          
+------------------------------------------------------------------------------------------------------------------------------
+ Seq Scan on vehicles  (cost=0.00..254807.46 rows=1 width=267) (actual time=1.459..360.456 rows=1.00 loops=1)
+   Filter: (plate = '25F-950.00'::text)
+   Rows Removed by Filter: 4999999
+   Buffers: shared hit=698 read=191610
+ Planning Time: 0.034 ms
+ JIT:
+   Functions: 2
+   Options: Inlining false, Optimization false, Expressions true, Deforming true
+   Timing: Generation 0.073 ms (Deform 0.023 ms), Inlining 0.000 ms, Optimization 0.072 ms, Emission 0.605 ms, Total 0.750 ms
+ Execution Time: 360.571 ms
+(10 rows)
+
+RESET max_parallel_workers_per_gather;
+RESET
+EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM vehicles WHERE id = 5000;
+                                                         QUERY PLAN                                                          
+-----------------------------------------------------------------------------------------------------------------------------
+ Index Scan using vehicles_pkey on vehicles  (cost=0.43..8.45 rows=1 width=267) (actual time=0.009..0.009 rows=1.00 loops=1)
+   Index Cond: (id = 5000)
+   Index Searches: 1
+   Buffers: shared hit=4
+ Planning Time: 0.033 ms
+ Execution Time: 0.014 ms
+(6 rows)
+

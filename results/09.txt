@@ -1,0 +1,159 @@
+DROP INDEX IF EXISTS vehicles_province_idx, vehicles_price_idx;
+DROP INDEX
+CREATE INDEX vehicles_province_idx ON vehicles (province);
+CREATE INDEX
+CREATE INDEX vehicles_price_idx ON vehicles (price_vnd);
+CREATE INDEX
+ANALYZE vehicles;
+ANALYZE
+SELECT most_common_vals, most_common_freqs FROM pg_stats
+WHERE tablename = 'vehicles' AND attname = 'province';
+                                                           most_common_vals                                                            |                                                            most_common_freqs                                                            
+---------------------------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------
+ {TP.HCM,"Hà Nội","Đồng Nai","Hải Phòng","Đà Nẵng","Cần Thơ","Quảng Ninh","Khánh Hòa","Thanh Hóa","Lâm Đồng","Nghệ An",Huế,"Lai Châu"} | {0.30126667,0.25426668,0.080066666,0.060733333,0.0596,0.0462,0.039466668,0.039033335,0.0303,0.029366666,0.029,0.025233334,0.0054666665}
+(1 row)
+
+SELECT n_distinct, array_length(histogram_bounds, 1) AS histogram_buckets FROM pg_stats
+WHERE tablename = 'vehicles' AND attname = 'price_vnd';
+ n_distinct | histogram_buckets 
+------------+-------------------
+       1801 |               101
+(1 row)
+
+EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM vehicles WHERE province = 'Lai Châu';
+                                                                QUERY PLAN                                                                 
+-------------------------------------------------------------------------------------------------------------------------------------------
+ Bitmap Heap Scan on vehicles  (cost=308.26..74840.24 rows=27333 width=267) (actual time=2.449..24.094 rows=24912.00 loops=1)
+   Recheck Cond: (province = 'Lai Châu'::text)
+   Heap Blocks: exact=23402
+   Buffers: shared read=23427
+   ->  Bitmap Index Scan on vehicles_province_idx  (cost=0.00..301.43 rows=27333 width=0) (actual time=0.858..0.858 rows=24912.00 loops=1)
+         Index Cond: (province = 'Lai Châu'::text)
+         Index Searches: 1
+         Buffers: shared read=25
+ Planning:
+   Buffers: shared hit=81 read=6
+ Planning Time: 0.104 ms
+ Execution Time: 24.613 ms
+(12 rows)
+
+EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM vehicles WHERE province = 'TP.HCM';
+                                                          QUERY PLAN                                                          
+------------------------------------------------------------------------------------------------------------------------------
+ Seq Scan on vehicles  (cost=0.00..254808.10 rows=1506336 width=267) (actual time=0.997..309.177 rows=1502448.00 loops=1)
+   Filter: (province = 'TP.HCM'::text)
+   Rows Removed by Filter: 3497552
+   Buffers: shared hit=16149 read=176159
+ Planning Time: 0.031 ms
+ JIT:
+   Functions: 2
+   Options: Inlining false, Optimization false, Expressions true, Deforming true
+   Timing: Generation 0.043 ms (Deform 0.018 ms), Inlining 0.000 ms, Optimization 0.077 ms, Emission 0.866 ms, Total 0.986 ms
+ Execution Time: 346.909 ms
+(10 rows)
+
+SHOW seq_page_cost;
+ seq_page_cost 
+---------------
+ 1
+(1 row)
+
+SHOW random_page_cost;
+ random_page_cost 
+------------------
+ 4
+(1 row)
+
+SHOW cpu_tuple_cost;
+ cpu_tuple_cost 
+----------------
+ 0.01
+(1 row)
+
+SHOW cpu_index_tuple_cost;
+ cpu_index_tuple_cost 
+----------------------
+ 0.005
+(1 row)
+
+SHOW cpu_operator_cost;
+ cpu_operator_cost 
+-------------------
+ 0.0025
+(1 row)
+
+SET enable_bitmapscan = off;
+SET
+SET enable_seqscan = off;
+SET
+EXPLAIN SELECT * FROM vehicles WHERE province = 'TP.HCM';
+                                            QUERY PLAN                                             
+---------------------------------------------------------------------------------------------------
+ Index Scan using vehicles_province_idx on vehicles  (cost=0.43..778169.45 rows=1506336 width=267)
+   Index Cond: (province = 'TP.HCM'::text)
+ JIT:
+   Functions: 2
+   Options: Inlining true, Optimization true, Expressions true, Deforming true
+(5 rows)
+
+RESET enable_bitmapscan;
+RESET
+RESET enable_seqscan;
+RESET
+EXPLAIN SELECT * FROM vehicles WHERE price_vnd < 201000000;
+                                     QUERY PLAN                                      
+-------------------------------------------------------------------------------------
+ Bitmap Heap Scan on vehicles  (cost=31.52..9025.72 rows=2463 width=267)
+   Recheck Cond: (price_vnd < 201000000)
+   ->  Bitmap Index Scan on vehicles_price_idx  (cost=0.00..30.91 rows=2463 width=0)
+         Index Cond: (price_vnd < 201000000)
+(4 rows)
+
+EXPLAIN SELECT * FROM vehicles WHERE price_vnd < 236000000;
+                                          QUERY PLAN                                          
+----------------------------------------------------------------------------------------------
+ Gather  (cost=2053.86..186156.68 rows=93604 width=267)
+   Workers Planned: 2
+   ->  Parallel Bitmap Heap Scan on vehicles  (cost=1053.86..175796.28 rows=39002 width=267)
+         Recheck Cond: (price_vnd < 236000000)
+         ->  Bitmap Index Scan on vehicles_price_idx  (cost=0.00..1030.46 rows=93604 width=0)
+               Index Cond: (price_vnd < 236000000)
+ JIT:
+   Functions: 2
+   Options: Inlining false, Optimization false, Expressions true, Deforming true
+(9 rows)
+
+EXPLAIN SELECT * FROM vehicles WHERE price_vnd < 560000000;
+                                   QUERY PLAN                                    
+---------------------------------------------------------------------------------
+ Seq Scan on vehicles  (cost=0.00..254808.10 rows=1009990 width=267)
+   Filter: (price_vnd < 560000000)
+ JIT:
+   Functions: 2
+   Options: Inlining false, Optimization false, Expressions true, Deforming true
+(5 rows)
+
+EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM vehicles WHERE plate >= '33K-000' AND plate < '33K-300';
+                                                             QUERY PLAN                                                             
+------------------------------------------------------------------------------------------------------------------------------------
+ Index Scan using vehicles_plate_idx on vehicles  (cost=0.43..8.45 rows=1 width=267) (actual time=0.035..0.540 rows=641.00 loops=1)
+   Index Cond: ((plate >= '33K-000'::text) AND (plate < '33K-300'::text))
+   Index Searches: 1
+   Buffers: shared hit=464 read=182
+ Planning:
+   Buffers: shared hit=3
+ Planning Time: 0.021 ms
+ Execution Time: 0.554 ms
+(8 rows)
+
+EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM vehicles WHERE plate >= '33K-000' AND plate < '33K-300';
+                                                             QUERY PLAN                                                             
+------------------------------------------------------------------------------------------------------------------------------------
+ Index Scan using vehicles_plate_idx on vehicles  (cost=0.43..8.45 rows=1 width=267) (actual time=0.073..0.158 rows=641.00 loops=1)
+   Index Cond: ((plate >= '33K-000'::text) AND (plate < '33K-300'::text))
+   Index Searches: 1
+   Buffers: shared hit=646
+ Planning Time: 0.012 ms
+ Execution Time: 0.172 ms
+(6 rows)
+

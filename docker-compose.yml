@@ -1,0 +1,12 @@
+# Phòng lab của khoá "Database index hoạt động như thế nào?".
+# docker compose up -d   →   psql "postgresql://lab:lab@localhost:5435/lab"
+services:
+  pg:
+    image: postgres:18
+    container_name: pgidx
+    environment:
+      POSTGRES_USER: lab
+      POSTGRES_PASSWORD: lab
+      POSTGRES_DB: lab
+    ports: ["5435:5432"]
+    shm_size: 256mb

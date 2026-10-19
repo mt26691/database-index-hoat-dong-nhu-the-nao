@@ -1,0 +1,143 @@
+CREATE EXTENSION IF NOT EXISTS pg_visibility;
+NOTICE:  extension "pg_visibility" already exists, skipping
+CREATE EXTENSION
+CREATE EXTENSION IF NOT EXISTS pageinspect;
+NOTICE:  extension "pageinspect" already exists, skipping
+CREATE EXTENSION
+SELECT plate AS p FROM vehicles WHERE id = 12345 
+EXPLAIN (ANALYZE, BUFFERS) SELECT price_vnd FROM vehicles WHERE plate = '47P-600.55';
+                                                                QUERY PLAN                                                                 
+-------------------------------------------------------------------------------------------------------------------------------------------
+ Index Only Scan using vehicles_plate_price_idx on vehicles  (cost=0.43..4.45 rows=1 width=8) (actual time=0.030..0.030 rows=1.00 loops=1)
+   Index Cond: (plate = '47P-600.55'::text)
+   Heap Fetches: 0
+   Index Searches: 1
+   Buffers: shared hit=4
+ Planning:
+   Buffers: shared hit=14
+ Planning Time: 0.056 ms
+ Execution Time: 0.042 ms
+(9 rows)
+
+DROP INDEX IF EXISTS vehicles_plate_price_idx;
+DROP INDEX
+CREATE INDEX vehicles_plate_price_idx ON vehicles (plate) INCLUDE (price_vnd);
+CREATE INDEX
+VACUUM (ANALYZE) vehicles;
+VACUUM
+SELECT pg_size_pretty(pg_relation_size('vehicles_plate_idx')) AS plate_only,
+       pg_size_pretty(pg_relation_size('vehicles_plate_price_idx')) AS plate_include_price;
+ plate_only | plate_include_price 
+------------+---------------------
+ 150 MB     | 193 MB
+(1 row)
+
+SELECT blkno, all_visible FROM pg_visibility_map('vehicles') WHERE blkno = 474;
+ blkno | all_visible 
+-------+-------------
+   474 | t
+(1 row)
+
+EXPLAIN (ANALYZE, BUFFERS) SELECT price_vnd FROM vehicles WHERE plate = '47P-600.55';
+                                                                QUERY PLAN                                                                 
+-------------------------------------------------------------------------------------------------------------------------------------------
+ Index Only Scan using vehicles_plate_price_idx on vehicles  (cost=0.43..4.45 rows=1 width=8) (actual time=0.031..0.031 rows=1.00 loops=1)
+   Index Cond: (plate = '47P-600.55'::text)
+   Heap Fetches: 0
+   Index Searches: 1
+   Buffers: shared hit=1 read=3
+ Planning:
+   Buffers: shared hit=20
+ Planning Time: 0.055 ms
+ Execution Time: 0.036 ms
+(9 rows)
+
+EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM vehicles WHERE plate = '47P-600.55';
+                                                               QUERY PLAN                                                               
+----------------------------------------------------------------------------------------------------------------------------------------
+ Index Scan using vehicles_plate_price_idx on vehicles  (cost=0.43..8.45 rows=1 width=267) (actual time=0.004..0.004 rows=1.00 loops=1)
+   Index Cond: (plate = '47P-600.55'::text)
+   Index Searches: 1
+   Buffers: shared hit=4
+ Planning:
+   Buffers: shared hit=30
+ Planning Time: 0.040 ms
+ Execution Time: 0.008 ms
+(8 rows)
+
+SELECT id AS other_id FROM vehicles WHERE (ctid::text::point)[0] = 474 AND id <> 12345 LIMIT 1 
+UPDATE vehicles SET mileage_km = mileage_km + 1 WHERE id = 12326;
+UPDATE 1
+SELECT blkno, all_visible FROM pg_visibility_map('vehicles') WHERE blkno = 474;
+ blkno | all_visible 
+-------+-------------
+   474 | f
+(1 row)
+
+EXPLAIN (ANALYZE, BUFFERS) SELECT price_vnd FROM vehicles WHERE plate = '47P-600.55';
+                                                                QUERY PLAN                                                                 
+-------------------------------------------------------------------------------------------------------------------------------------------
+ Index Only Scan using vehicles_plate_price_idx on vehicles  (cost=0.43..4.45 rows=1 width=8) (actual time=0.016..0.016 rows=1.00 loops=1)
+   Index Cond: (plate = '47P-600.55'::text)
+   Heap Fetches: 1
+   Index Searches: 1
+   Buffers: shared hit=5
+ Planning Time: 0.027 ms
+ Execution Time: 0.021 ms
+(7 rows)
+
+VACUUM vehicles;
+VACUUM
+SELECT blkno, all_visible FROM pg_visibility_map('vehicles') WHERE blkno = 474;
+ blkno | all_visible 
+-------+-------------
+   474 | t
+(1 row)
+
+SELECT lp, lp_flags FROM heap_page_items(get_raw_page('vehicles', 474)) WHERE lp_flags <> 1;
+ lp | lp_flags 
+----+----------
+  2 |        2
+(1 row)
+
+EXPLAIN (ANALYZE, BUFFERS) SELECT price_vnd FROM vehicles WHERE plate = '47P-600.55';
+                                                                QUERY PLAN                                                                 
+-------------------------------------------------------------------------------------------------------------------------------------------
+ Index Only Scan using vehicles_plate_price_idx on vehicles  (cost=0.43..4.45 rows=1 width=8) (actual time=0.006..0.007 rows=1.00 loops=1)
+   Index Cond: (plate = '47P-600.55'::text)
+   Heap Fetches: 0
+   Index Searches: 1
+   Buffers: shared hit=4
+ Planning:
+   Buffers: shared hit=5
+ Planning Time: 0.026 ms
+ Execution Time: 0.010 ms
+(9 rows)
+
+VACUUM (INDEX_CLEANUP ON) vehicles;
+VACUUM
+SELECT blkno, all_visible FROM pg_visibility_map('vehicles') WHERE blkno = 474;
+ blkno | all_visible 
+-------+-------------
+   474 | t
+(1 row)
+
+EXPLAIN (ANALYZE, BUFFERS) SELECT price_vnd FROM vehicles WHERE plate = '47P-600.55';
+                                                                QUERY PLAN                                                                 
+-------------------------------------------------------------------------------------------------------------------------------------------
+ Index Only Scan using vehicles_plate_price_idx on vehicles  (cost=0.43..4.45 rows=1 width=8) (actual time=0.008..0.008 rows=1.00 loops=1)
+   Index Cond: (plate = '47P-600.55'::text)
+   Heap Fetches: 0
+   Index Searches: 1
+   Buffers: shared hit=4
+ Planning Time: 0.022 ms
+ Execution Time: 0.012 ms
+(7 rows)
+
+SELECT pg_size_pretty(pg_relation_size('vehicles', 'vm')) AS vm_size,
+       pg_size_pretty(pg_relation_size('vehicles')) AS heap_size;
+ vm_size | heap_size 
+---------+-----------
+ 48 kB   | 1502 MB
+(1 row)
+

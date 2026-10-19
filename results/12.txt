@@ -1,0 +1,164 @@
+CREATE EXTENSION IF NOT EXISTS pgstattuple;
+CREATE EXTENSION
+CREATE EXTENSION IF NOT EXISTS pageinspect;
+NOTICE:  extension "pgstattuple" already exists, skipping
+NOTICE:  extension "pageinspect" already exists, skipping
+CREATE EXTENSION
+SET max_parallel_maintenance_workers = 0;
+SET
+DROP TABLE IF EXISTS u100, u90;
+NOTICE:  table "u100" does not exist, skipping
+NOTICE:  table "u90" does not exist, skipping
+DROP TABLE
+CREATE TABLE u100 WITH (fillfactor = 100) AS SELECT * FROM vehicles WHERE id <= 200000;
+SELECT 200000
+CREATE TABLE u90  WITH (fillfactor = 90)  AS SELECT * FROM vehicles WHERE id <= 200000;
+SELECT 200000
+ALTER TABLE u100 ADD PRIMARY KEY (id);
+ALTER TABLE
+ALTER TABLE u90 ADD PRIMARY KEY (id);
+ALTER TABLE
+CREATE INDEX u100_plate ON u100 (plate);
+CREATE INDEX
+CREATE INDEX u90_plate ON u90 (plate);
+CREATE INDEX
+CREATE INDEX u100_price ON u100 (price_vnd);
+CREATE INDEX
+CREATE INDEX u90_price ON u90 (price_vnd);
+CREATE INDEX
+VACUUM (ANALYZE) u100, u90;
+VACUUM
+BEGIN;
+BEGIN
+SELECT ctid, xmin, xmax, seller_note IS NOT NULL AS has_note FROM u90 WHERE id = 1;
+ ctid  | xmin | xmax | has_note 
+-------+------+------+----------
+ (0,1) |  850 |    0 | t
+(1 row)
+
+UPDATE u90 SET seller_note = 'Đã giảm giá' WHERE id = 1;
+UPDATE 1
+SELECT ctid, xmin FROM u90 WHERE id = 1;
+  ctid  | xmin 
+--------+------
+ (0,25) |  859
+(1 row)
+
+SELECT lp, lp_flags, t_xmin, t_xmax, t_ctid FROM heap_page_items(get_raw_page('u90', 0)) WHERE lp IN (1) OR t_ctid = '(0,1)' OR lp > 24 ORDER BY lp;
+ lp | lp_flags | t_xmin | t_xmax | t_ctid 
+----+----------+--------+--------+--------
+  1 |        1 |    850 |    859 | (0,25)
+ 25 |        1 |    859 |      0 | (0,25)
+(2 rows)
+
+ROLLBACK;
+ROLLBACK
+UPDATE u100 SET seller_note = seller_note || ' (đã kiểm tra)' WHERE id % 10 = 0;
+UPDATE 20000
+UPDATE u90  SET seller_note = seller_note || ' (đã kiểm tra)' WHERE id % 10 = 0;
+UPDATE 20000
+SELECT pg_stat_force_next_flush();
+ pg_stat_force_next_flush 
+--------------------------
+ 
+(1 row)
+
+SELECT relname, n_tup_upd, n_tup_hot_upd,
+       round(100.0 * n_tup_hot_upd / nullif(n_tup_upd, 0), 1) AS hot_pct
+FROM pg_stat_user_tables WHERE relname IN ('u100', 'u90') ORDER BY relname DESC;
+ relname | n_tup_upd | n_tup_hot_upd | hot_pct 
+---------+-----------+---------------+---------
+ u90     |     20001 |         17313 |    86.6
+ u100    |     20000 |             0 |     0.0
+(2 rows)
+
+UPDATE u90 SET price_vnd = price_vnd + 1000000 WHERE id % 10 = 1;
+UPDATE 20000
+SELECT pg_stat_force_next_flush();
+ pg_stat_force_next_flush 
+--------------------------
+ 
+(1 row)
+
+SELECT relname, n_tup_upd, n_tup_hot_upd FROM pg_stat_user_tables WHERE relname = 'u90';
+ relname | n_tup_upd | n_tup_hot_upd 
+---------+-----------+---------------
+ u90     |     40001 |         17313
+(1 row)
+
+DROP TABLE IF EXISTS b;
+NOTICE:  table "b" does not exist, skipping
+DROP TABLE
+CREATE TABLE b AS SELECT * FROM vehicles WHERE id <= 200000;
+SELECT 200000
+ALTER TABLE b ADD PRIMARY KEY (id);
+ALTER TABLE
+CREATE INDEX b_price ON b (price_vnd);
+CREATE INDEX
+CREATE INDEX b_plate ON b (plate);
+CREATE INDEX
+VACUUM (ANALYZE) b;
+VACUUM
+SELECT 'ban đầu' AS buoc, pg_size_pretty(pg_relation_size('b')) AS heap,
+       pg_size_pretty(pg_relation_size('b_price')) AS price_idx, pg_size_pretty(pg_relation_size('b_plate')) AS plate_idx,
+       (SELECT dead_tuple_count FROM pgstattuple('b')) AS dead;
+  buoc   | heap  | price_idx | plate_idx | dead 
+---------+-------+-----------+-----------+------
+ ban đầu | 61 MB | 1424 kB   | 6184 kB   |    0
+(1 row)
+
+UPDATE b SET price_vnd = price_vnd + 1000000;
+UPDATE 200000
+UPDATE b SET price_vnd = price_vnd + 1000000;
+UPDATE 200000
+UPDATE b SET price_vnd = price_vnd + 1000000;
+UPDATE 200000
+SELECT 'sau 3 lần UPDATE' AS buoc, pg_size_pretty(pg_relation_size('b')) AS heap,
+       pg_size_pretty(pg_relation_size('b_price')) AS price_idx, pg_size_pretty(pg_relation_size('b_plate')) AS plate_idx,
+       (SELECT dead_tuple_count FROM pgstattuple('b')) AS dead;
+       buoc       |  heap  | price_idx | plate_idx |  dead  
+------------------+--------+-----------+-----------+--------
+ sau 3 lần UPDATE | 240 MB | 7040 kB   | 12 MB     | 200000
+(1 row)
+
+VACUUM b;
+VACUUM
+SELECT 'sau VACUUM' AS buoc, pg_size_pretty(pg_relation_size('b')) AS heap,
+       pg_size_pretty(pg_relation_size('b_price')) AS price_idx, pg_size_pretty(pg_relation_size('b_plate')) AS plate_idx,
+       (SELECT dead_tuple_count FROM pgstattuple('b')) AS dead,
+       (SELECT round(free_percent) FROM pgstattuple('b')) AS heap_free_pct;
+    buoc    |  heap  | price_idx | plate_idx | dead | heap_free_pct 
+------------+--------+-----------+-----------+------+---------------
+ sau VACUUM | 240 MB | 7040 kB   | 12 MB     |    0 |            75
+(1 row)
+
+SELECT 'b_price' AS idx, leaf_pages, avg_leaf_density FROM pgstatindex('b_price');
+   idx   | leaf_pages | avg_leaf_density 
+---------+------------+------------------
+ b_price |        875 |               26
+(1 row)
+
+UPDATE b SET price_vnd = price_vnd + 1000000;
+UPDATE 200000
+SELECT 'UPDATE lần 4 sau VACUUM' AS buoc, pg_size_pretty(pg_relation_size('b')) AS heap,
+       pg_size_pretty(pg_relation_size('b_price')) AS price_idx;
+          buoc           |  heap  | price_idx 
+-------------------------+--------+-----------
+ UPDATE lần 4 sau VACUUM | 240 MB | 7040 kB
+(1 row)
+
+VACUUM b;
+VACUUM
+REINDEX TABLE b;
+REINDEX
+VACUUM FULL b;
+VACUUM
+SELECT 'sau VACUUM FULL' AS buoc, pg_size_pretty(pg_relation_size('b')) AS heap,
+       pg_size_pretty(pg_relation_size('b_price')) AS price_idx, pg_size_pretty(pg_relation_size('b_plate')) AS plate_idx;
+      buoc       | heap  | price_idx | plate_idx 
+-----------------+-------+-----------+-----------
+ sau VACUUM FULL | 60 MB | 1424 kB   | 6184 kB
+(1 row)
+
+DROP TABLE u100, u90, b;
+DROP TABLE
