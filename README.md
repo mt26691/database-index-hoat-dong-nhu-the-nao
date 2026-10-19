@@ -1,89 +1,64 @@
-# database-index-hoat-dong-nhu-the-nao — phòng lab của khoá "Database index hoạt động như thế nào?"
+# Database index hoạt động như thế nào?
 
-Repo này chứa **dữ liệu mẫu** và **file `.sql` của từng bài** trong khoá
-[Database index hoạt động như thế nào?](https://nguyenly.dev/khoa-hoc/database-index-hoat-dong-nhu-the-nao)
-trên nguyenly.dev.
+SQL đi kèm khoá học [Database index hoạt động như thế nào?](https://nguyenly.dev/khoa-hoc/database-index-hoat-dong-nhu-the-nao) trên nguyenly.dev.
 
-Mọi con số trong khoá (số page, số dòng đã kiểm tra, thời gian chạy) đều đo bằng đúng những file
-ở đây, trên PostgreSQL 18. Bạn chạy lại được trên máy mình. Chỉ cần Docker.
+Bạn chỉ cần Docker.
 
-Hướng dẫn từng bước có trong bài cuối của khoá:
-[Repo thực hành: tự chạy lại mọi phép đo trong khoá](https://nguyenly.dev/khoa-hoc/database-index-hoat-dong-nhu-the-nao/repo-thuc-hanh).
-
-## Dựng bảng 5 triệu xe
+## Cài đặt
 
 ```bash
 git clone https://github.com/mt26691/database-index-hoat-dong-nhu-the-nao.git
 cd database-index-hoat-dong-nhu-the-nao
-docker compose up -d                                    # PostgreSQL 18, cổng 5435, user/pass/db = lab
-./psql.sh -v rows=5000000 -v ON_ERROR_STOP=1 < seed.sql   # khoảng 20 giây, bảng 1,5 GB
+docker compose up -d --wait
 ```
 
-Vào database:
+Lần đầu, lệnh này tải PostgreSQL 18 và tạo bảng `vehicles` 5 triệu xe, mất khoảng một phút.
+
+## Chạy SQL của một bài
 
 ```bash
-./psql.sh
+docker compose exec db psql -f bai/01-index-la-gi.sql
 ```
 
-Thử câu tìm biển số của bài 1:
+Đổi tên file để chạy bài khác. Mỗi file chạy riêng được, không cần theo thứ tự.
 
-```sql
-SELECT * FROM vehicles WHERE plate = '25F-950.00';
-```
-
-Ra đúng một chiếc xe là xong. Gõ `\q` để thoát.
-
-## Dữ liệu mẫu: một website mua bán xe cũ
-
-Một bảng `vehicles`, 5 triệu xe giả, sinh theo `id` với `setseed(0.42)`, nên lần nào chạy cũng ra
-cùng dữ liệu: biển số, tỉnh, hãng, dòng xe, năm, số km, giá, nhiên liệu, ngày đăng, ngày bán, ghi chú
-của người bán. Khoá chính `id` là index duy nhất lúc đầu.
-
-## Lab theo từng bài
-
-Chạy lab một bài và lưu kết quả vào `results/`:
+Muốn gõ SQL tự do:
 
 ```bash
-./run.sh 01        # → results/01.txt
+docker compose exec db psql
 ```
 
-Chạy theo thứ tự: lab sau dựa vào index mà lab trước tạo hoặc xoá.
+## Các bài
 
-| File | Bài trong khoá |
+| File | Bài |
 |---|---|
-| `chapters/01-seq-scan.sql` | 1–3. Index là gì, PostgreSQL tìm dữ liệu thế nào, index giúp nhanh hơn ra sao |
-| `chapters/02-pages-and-tid.sql` | 4. PostgreSQL lưu dữ liệu trên đĩa như thế nào? |
-| `chapters/03-btree-concept.sql` | 5. B-tree là gì? |
-| `chapters/04-btree-index.sql` | 6. PostgreSQL sử dụng B-tree làm index như thế nào? |
-| `chapters/05-index-to-heap.sql` | 7. Index Scan tìm row trong heap như thế nào? |
-| `chapters/06-index-only.sql` | 8. Index Only Scan tránh đọc heap bằng cách nào? |
-| `chapters/07-composite-index.sql` | 9. Index nhiều cột hoạt động như thế nào? |
-| `chapters/08-when-index-not-used.sql` | 10. Vì sao có index nhưng query không tận dụng được? |
-| `chapters/09-query-planner.sql` | 11. PostgreSQL quyết định dùng index hay Seq Scan thế nào? |
-| `chapters/10-specialized-indexes.sql` | 12. Khi index thông thường không phù hợp thì làm gì? |
-| `chapters/11-write-cost.sql` | 13. Vì sao index làm INSERT và UPDATE chậm hơn? |
-| `chapters/12-vacuum-hot-bloat.sql` | 14. Vì sao index phình to theo thời gian? |
-| `chapters/13-slow-query-lab.sql` | 15. Tối ưu một truy vấn chậm bằng EXPLAIN ANALYZE |
+| [`01-index-la-gi.sql`](bai/01-index-la-gi.sql) | Index là gì và vì sao cần nó? |
+| [`02-postgresql-tim-du-lieu-nhu-the-nao.sql`](bai/02-postgresql-tim-du-lieu-nhu-the-nao.sql) | PostgreSQL tìm dữ liệu như thế nào? |
+| [`03-index-hoat-dong-nhu-the-nao.sql`](bai/03-index-hoat-dong-nhu-the-nao.sql) | Index giúp truy vấn nhanh hơn bằng cách nào? |
+| [`04-postgresql-luu-du-lieu-tren-dia-nhu-the-nao.sql`](bai/04-postgresql-luu-du-lieu-tren-dia-nhu-the-nao.sql) | PostgreSQL lưu dữ liệu trên đĩa như thế nào? |
+| [`05-b-tree-la-gi.sql`](bai/05-b-tree-la-gi.sql) | B-tree là gì? |
+| [`06-postgresql-su-dung-b-tree-lam-index-nhu-the-nao.sql`](bai/06-postgresql-su-dung-b-tree-lam-index-nhu-the-nao.sql) | PostgreSQL sử dụng B-tree làm index như thế nào? |
+| [`07-index-scan-tim-row-trong-heap.sql`](bai/07-index-scan-tim-row-trong-heap.sql) | Index Scan tìm row trong heap như thế nào? |
+| [`08-index-only-scan-tranh-doc-heap.sql`](bai/08-index-only-scan-tranh-doc-heap.sql) | Index Only Scan tránh đọc heap bằng cách nào? |
+| [`09-index-nhieu-cot-hoat-dong-nhu-the-nao.sql`](bai/09-index-nhieu-cot-hoat-dong-nhu-the-nao.sql) | Index nhiều cột hoạt động như thế nào? |
+| [`10-vi-sao-query-khong-tan-dung-index.sql`](bai/10-vi-sao-query-khong-tan-dung-index.sql) | Vì sao có index nhưng query không tận dụng được? |
+| [`11-postgresql-chon-index-hay-seq-scan.sql`](bai/11-postgresql-chon-index-hay-seq-scan.sql) | PostgreSQL quyết định dùng index hay Seq Scan thế nào? |
+| [`12-khi-index-thong-thuong-khong-phu-hop.sql`](bai/12-khi-index-thong-thuong-khong-phu-hop.sql) | Khi index thông thường không phù hợp thì làm gì? |
+| [`13-vi-sao-index-lam-ghi-cham-hon.sql`](bai/13-vi-sao-index-lam-ghi-cham-hon.sql) | Vì sao index làm INSERT và UPDATE chậm hơn? |
+| [`14-vi-sao-index-phinh-to.sql`](bai/14-vi-sao-index-phinh-to.sql) | Vì sao index phình to theo thời gian? |
+| [`15-toi-uu-truy-van-cham-postgresql.sql`](bai/15-toi-uu-truy-van-cham-postgresql.sql) | Tối ưu một truy vấn chậm bằng EXPLAIN ANALYZE |
 
-Chú thích trong các file `.sql` còn ghi "Chương N" theo số chương cũ (lab viết trước khi bài 1 được
-tách thành ba bài). Bảng trên là cách đối chiếu.
+## Dữ liệu
 
-## Các file khác
+Bảng `vehicles` là 5 triệu xe giả của một website mua bán xe cũ: biển số, tỉnh, hãng, giá, ngày đăng, ngày bán. Dữ liệu sinh từ [`seed.sql`](seed.sql) với hạt giống cố định, nên máy nào cũng ra cùng một bảng. Hai bảng nhỏ `vehicles_10k` và `vehicles_200k` dùng để so sánh ở bài 1 và bài 2.
 
-| File | Làm gì |
-|---|---|
-| `bench.py` | đo thời gian dùng trong bài: 1 lần làm nóng + 7 lần đo, lấy trung vị → `results/bench.json` |
-| `planner_sweep.py` | bài 11: cost của planner cho ba cách đọc khi đổi tỷ lệ dòng khớp → `results/09-planner-sweep.json` |
-| `results/` | kết quả thô của lần chạy ngày 09/10/2026 (Apple M5, Docker) |
+Số mili giây trên máy bạn sẽ khác số trong bài. Số page và số dòng thì giống hệt.
 
-Máy khác sẽ cho số mili giây khác. Số page và số dòng thì giống hệt, vì chúng chỉ phụ thuộc vào dữ liệu.
+## Kết nối bằng công cụ khác
 
-## Lưu ý
+PostgreSQL mở ở cổng `5435`, user `postgres`, mật khẩu `postgres`, database `postgres`. Dùng được với DBeaver, TablePlus, pgAdmin.
 
-Đừng chạy `EXPLAIN ANALYZE` trên `INSERT` hay `UPDATE` ở database thật mà không bọc trong
-`BEGIN … ROLLBACK`: `ANALYZE` chạy câu lệnh thật.
-
-Dừng và xoá database lab:
+## Xoá
 
 ```bash
 docker compose down -v

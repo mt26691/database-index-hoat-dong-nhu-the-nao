@@ -1,12 +1,18 @@
-# Phòng lab của khoá "Database index hoạt động như thế nào?".
-# docker compose up -d   →   psql "postgresql://lab:lab@localhost:5435/lab"
 services:
-  pg:
+  db:
     image: postgres:18
-    container_name: pgidx
     environment:
-      POSTGRES_USER: lab
-      POSTGRES_PASSWORD: lab
-      POSTGRES_DB: lab
-    ports: ["5435:5432"]
+      POSTGRES_PASSWORD: postgres
+      PGUSER: postgres
+    ports:
+      - "5435:5432"
     shm_size: 256mb
+    working_dir: /lab
+    volumes:
+      - ./seed.sql:/docker-entrypoint-initdb.d/seed.sql:ro
+      - ./bai:/lab/bai:ro
+    healthcheck:
+      # Lần đầu chạy, seed.sql nạp 5 triệu xe trước khi PostgreSQL nhận kết nối qua mạng.
+      test: ["CMD", "pg_isready", "-h", "127.0.0.1"]
+      interval: 5s
+      retries: 60
