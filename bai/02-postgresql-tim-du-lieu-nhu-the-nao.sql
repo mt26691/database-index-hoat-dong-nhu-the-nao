@@ -9,12 +9,13 @@ DO $$ DECLARE i text; BEGIN
   LOOP EXECUTE 'DROP INDEX ' || i; END LOOP;
 END $$;
 
-\echo '--- Mỗi page 8 KB. Bảng 5 triệu xe có bao nhiêu page?'
+\echo '--- Mỗi page 8 KB. Bảng 5 triệu xe chiếm bao nhiêu page?'
 SHOW block_size;
-SELECT pg_relation_size('vehicles') / 8192 AS pages,
+SELECT pg_relation_size('vehicles') / current_setting('block_size')::int AS pages,
        pg_size_pretty(pg_relation_size('vehicles')) AS size;
 
-\echo '--- Quét tuần tự bằng một tiến trình. Cộng hit và read ở dòng Buffers là ra số page đã đọc'
+\echo '--- Quét tuần tự bằng một tiến trình (chỉ trong phiên này, tới lệnh RESET bên dưới)'
+\echo '--- Seq Scan ghé mỗi page một lần, nên ở đây hit + read bằng số page của bảng'
 SET max_parallel_workers_per_gather = 0;
 EXPLAIN (ANALYZE, BUFFERS)
 SELECT * FROM vehicles WHERE plate = '25F-950.00';
@@ -24,7 +25,7 @@ EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM vehicles_10k  WHERE plate = '25F-950.00
 EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM vehicles_200k WHERE plate = '25F-950.00';
 EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM vehicles      WHERE plate = '25F-950.00';
 
-\echo '--- Cho phép chạy song song: Gather chia page cho các Parallel Seq Scan'
+\echo '--- Trả thiết lập về mặc định: Gather chia page cho các Parallel Seq Scan'
 RESET max_parallel_workers_per_gather;
 EXPLAIN (ANALYZE, BUFFERS)
 SELECT * FROM vehicles WHERE plate = '25F-950.00';
