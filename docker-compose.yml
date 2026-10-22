@@ -1,6 +1,8 @@
 services:
   db:
     image: postgres:18
+    # Số trong bài đo theo giờ Việt Nam; câu lọc theo ngày ra khác nếu server chạy giờ UTC.
+    command: ["postgres", "-c", "timezone=Asia/Ho_Chi_Minh"]
     environment:
       POSTGRES_PASSWORD: postgres
       PGUSER: postgres

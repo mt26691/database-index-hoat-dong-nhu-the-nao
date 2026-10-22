@@ -9,7 +9,7 @@ DO $$ DECLARE i text; BEGIN
   LOOP EXECUTE 'DROP INDEX ' || i; END LOOP;
 END $$;
 
-\echo '--- Tạo index B-tree trên plate (mất vài giây)'
+\echo '--- Index trên plate (bài 3 đã tạo; file này tạo lại để chạy riêng được, mất vài giây)'
 \timing on
 CREATE INDEX vehicles_plate_idx ON vehicles (plate);
 \timing off
@@ -27,6 +27,9 @@ GROUP BY type ORDER BY type DESC;
 SELECT root AS root_page FROM bt_metap('vehicles_plate_idx') \gset
 SELECT itemoffset, ctid, data
 FROM bt_page_items('vehicles_plate_idx', :root_page) LIMIT 4;
+
+\echo '--- Biển 47P-600.55 (xe id 12345) nằm ở địa chỉ dòng nào?'
+SELECT id, plate, ctid FROM vehicles WHERE plate = '47P-600.55';
 
 \echo '--- Tìm một biển số: 3 page index (gốc, trong, lá) và 1 page của bảng'
 EXPLAIN (ANALYZE, BUFFERS)

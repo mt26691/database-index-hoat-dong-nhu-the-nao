@@ -15,15 +15,12 @@ SELECT id, plate FROM vehicles WHERE id = 5000;
 EXPLAIN (ANALYZE, BUFFERS)
 SELECT * FROM vehicles WHERE id = 5000;
 
-\echo '--- Tìm theo biển số khi chưa có index'
-EXPLAIN (ANALYZE, BUFFERS)
-SELECT * FROM vehicles WHERE plate = '25F-950.00';
-
-\echo '--- Tạo index trên plate rồi tìm lại'
+\echo '--- Tạo index trên plate rồi chạy lại câu của bài trước'
 CREATE INDEX vehicles_plate_idx ON vehicles (plate);
+SELECT id, plate FROM vehicles WHERE plate = '25F-950.00';
 EXPLAIN (ANALYZE, BUFFERS)
 SELECT * FROM vehicles WHERE plate = '25F-950.00';
 
-\echo '--- Index cũng chiếm chỗ trên đĩa'
-SELECT pg_size_pretty(pg_relation_size('vehicles_plate_idx')) AS index_size,
-       pg_size_pretty(pg_relation_size('vehicles')) AS table_size;
+\echo '--- Index trên plate có 3 tầng: level của page gốc là 2'
+CREATE EXTENSION IF NOT EXISTS pageinspect;
+SELECT level + 1 AS so_tang FROM bt_metap('vehicles_plate_idx');

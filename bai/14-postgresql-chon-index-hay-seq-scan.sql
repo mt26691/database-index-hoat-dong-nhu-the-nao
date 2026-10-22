@@ -1,4 +1,4 @@
--- Bài 11. PostgreSQL quyết định dùng index hay Seq Scan thế nào?
+-- Bài 14. PostgreSQL quyết định dùng index hay Seq Scan thế nào?
 -- https://nguyenly.dev/khoa-hoc/database-index-hoat-dong-nhu-the-nao/postgresql-chon-index-hay-seq-scan
 \pset pager off
 

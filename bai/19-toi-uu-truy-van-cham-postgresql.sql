@@ -1,4 +1,4 @@
--- Bài 15. Tối ưu một truy vấn chậm bằng EXPLAIN ANALYZE
+-- Bài 19. Tối ưu một truy vấn chậm bằng EXPLAIN ANALYZE
 -- https://nguyenly.dev/khoa-hoc/database-index-hoat-dong-nhu-the-nao/toi-uu-truy-van-cham-postgresql
 \pset pager off
 
@@ -17,7 +17,7 @@ SELECT id, plate, price_vnd, listed_at FROM vehicles
 WHERE province = 'Đà Nẵng' AND sold_at IS NULL
 ORDER BY listed_at DESC LIMIT 20;
 
-\echo '--- Bước 2: planner ước lượng bao nhiêu xe khớp, thực tế là bao nhiêu?'
+\echo '--- Bước 1: PostgreSQL đoán khoảng 46 nghìn xe khớp. Thực tế là bao nhiêu?'
 SELECT count(*) AS xe_dang_ban_o_da_nang FROM vehicles WHERE province = 'Đà Nẵng' AND sold_at IS NULL;
 
 \echo '--- Bước 3: tạo index mà không chặn ghi'
@@ -40,3 +40,8 @@ WHERE id = (SELECT id FROM vehicles
             WHERE province = 'Đà Nẵng' AND sold_at IS NULL
             ORDER BY listed_at DESC LIMIT 1);
 ROLLBACK;
+
+\echo '--- Bước 5: mỗi index đã được dùng để tìm kiếm bao nhiêu lần?'
+SELECT indexrelname, idx_scan
+FROM pg_stat_user_indexes
+WHERE relname = 'vehicles';

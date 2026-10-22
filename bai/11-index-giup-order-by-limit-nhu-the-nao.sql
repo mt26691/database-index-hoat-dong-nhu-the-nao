@@ -1,5 +1,5 @@
--- Bài 9. Index nhiều cột (composite index) hoạt động như thế nào?
--- https://nguyenly.dev/khoa-hoc/database-index-hoat-dong-nhu-the-nao/index-nhieu-cot-hoat-dong-nhu-the-nao
+-- Bài 11. Index giúp ORDER BY và LIMIT nhanh hơn thế nào?
+-- https://nguyenly.dev/khoa-hoc/database-index-hoat-dong-nhu-the-nao/index-giup-order-by-limit-nhu-the-nao
 \pset pager off
 
 -- Bỏ mọi index mà các bài khác đã tạo, chỉ giữ index của khoá chính.
@@ -9,13 +9,13 @@ DO $$ DECLARE i text; BEGIN
   LOOP EXECUTE 'DROP INDEX ' || i; END LOOP;
 END $$;
 
-\echo '--- Chưa có index phù hợp'
+\echo '--- Chưa có index phù hợp: lọc cả bảng rồi Sort'
 EXPLAIN (ANALYZE, BUFFERS)
 SELECT id, listed_at FROM vehicles
 WHERE province = 'Đà Nẵng' AND listed_at >= '2025-01-01'
 ORDER BY listed_at DESC LIMIT 20;
 
-\echo '--- Index (province, listed_at): tỉnh trước, ngày sau'
+\echo '--- Index (province, listed_at DESC): đọc 20 mục đầu đoạn rồi dừng, không có Sort'
 CREATE INDEX vehicles_prov_listed_idx ON vehicles (province, listed_at DESC);
 ANALYZE vehicles;
 EXPLAIN (ANALYZE, BUFFERS)
@@ -23,17 +23,9 @@ SELECT id, listed_at FROM vehicles
 WHERE province = 'Đà Nẵng' AND listed_at >= '2025-01-01'
 ORDER BY listed_at DESC LIMIT 20;
 
-\echo '--- Đếm hết các xe khớp với thứ tự cột này'
-EXPLAIN (ANALYZE, BUFFERS)
-SELECT count(*) FROM vehicles WHERE province = 'Đà Nẵng' AND listed_at >= '2025-01-01';
-
 \echo '--- PostgreSQL 18 skip scan: không lọc tỉnh vẫn dùng được index, xem dòng Index Searches'
 EXPLAIN (ANALYZE, BUFFERS)
 SELECT count(*) FROM vehicles WHERE listed_at >= '2026-09-29';
 
-\echo '--- Đổi thứ tự cột: (listed_at, province), đếm lại'
-DROP INDEX vehicles_prov_listed_idx;
-CREATE INDEX vehicles_listed_prov_idx ON vehicles (listed_at DESC, province);
-ANALYZE vehicles;
-EXPLAIN (ANALYZE, BUFFERS)
-SELECT count(*) FROM vehicles WHERE province = 'Đà Nẵng' AND listed_at >= '2025-01-01';
+\echo '--- Có bao nhiêu tỉnh?'
+SELECT count(DISTINCT province) AS provinces FROM vehicles;
