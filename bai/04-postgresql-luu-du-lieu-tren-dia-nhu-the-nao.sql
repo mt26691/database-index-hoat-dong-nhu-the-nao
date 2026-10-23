@@ -10,7 +10,7 @@ SELECT pg_relation_size('vehicles') AS bytes,
 
 \echo '--- ctid là địa chỉ của dòng: (số page, số con trỏ trong page)'
 SELECT ctid, id, plate FROM vehicles ORDER BY id LIMIT 3;
-SELECT ctid, id, plate FROM vehicles WHERE plate = '25F-950.00';
+SELECT ctid, id, plate FROM vehicles WHERE id = 5000;
 
 \echo '--- Bên trong page 0: phần đầu page và các con trỏ dòng'
 CREATE EXTENSION IF NOT EXISTS pageinspect;
