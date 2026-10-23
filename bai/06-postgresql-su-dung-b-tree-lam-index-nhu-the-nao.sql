@@ -28,6 +28,18 @@ SELECT root AS root_page FROM bt_metap('vehicles_plate_idx') \gset
 SELECT itemoffset, ctid, data
 FROM bt_page_items('vehicles_plate_idx', :root_page) LIMIT 4;
 
+\echo '--- Ba page trên đường tìm 47P-600.55: loại page (r gốc, i trong, l lá), level, page trái và phải'
+-- Số page 7961 và 8059 là của index dựng từ seed.sql của repo này; dữ liệu khác thì số khác.
+SELECT blkno, type, btpo_level, btpo_prev, btpo_next, live_items FROM bt_page_stats('vehicles_plate_idx', 209)
+UNION ALL SELECT blkno, type, btpo_level, btpo_prev, btpo_next, live_items FROM bt_page_stats('vehicles_plate_idx', 7961)
+UNION ALL SELECT blkno, type, btpo_level, btpo_prev, btpo_next, live_items FROM bt_page_stats('vehicles_plate_idx', 8059);
+
+\echo '--- Trong page trong 7961: ctid của mỗi mục chứa số page con (8058, 8059, 8060)'
+SELECT itemoffset, ctid FROM bt_page_items('vehicles_plate_idx', 7961) WHERE itemoffset BETWEEN 101 AND 103;
+
+\echo '--- Trong lá 8059: mục 57 là 47P-600.55, htid là địa chỉ dòng trong bảng'
+SELECT itemoffset, htid FROM bt_page_items('vehicles_plate_idx', 8059) WHERE itemoffset BETWEEN 56 AND 58;
+
 \echo '--- Biển 47P-600.55 (xe id 12345) nằm ở địa chỉ dòng nào?'
 SELECT id, plate, ctid FROM vehicles WHERE plate = '47P-600.55';
 
