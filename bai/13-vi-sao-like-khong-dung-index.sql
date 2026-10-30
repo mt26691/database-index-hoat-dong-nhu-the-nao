@@ -1,4 +1,4 @@
--- Bài 13. Vì sao LIKE vẫn quét cả bảng dù có index?
+-- Bài 13. Vì sao LIKE không dùng index?
 -- https://nguyenly.dev/khoa-hoc/database-index-hoat-dong-nhu-the-nao/vi-sao-like-khong-dung-index
 \pset pager off
 -- Một tiến trình cho kế hoạch dễ đọc; số page vẫn như khi chạy song song.
@@ -32,6 +32,12 @@ CREATE INDEX vehicles_plate_pattern_idx ON vehicles (plate text_pattern_ops);
 ANALYZE vehicles;
 EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM vehicles WHERE plate LIKE '47P-600%';
 DROP INDEX vehicles_plate_pattern_idx;
+
+\echo '--- Hoặc index theo collation C: LIKE viết trơn cũng dùng được'
+CREATE INDEX vehicles_plate_c_idx ON vehicles (plate COLLATE "C");
+ANALYZE vehicles;
+EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM vehicles WHERE plate LIKE '47P-600%';
+DROP INDEX vehicles_plate_c_idx;
 
 \echo '--- Tìm ở giữa chuỗi: B-tree không giúp được'
 EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM vehicles WHERE plate LIKE '%600.5%';

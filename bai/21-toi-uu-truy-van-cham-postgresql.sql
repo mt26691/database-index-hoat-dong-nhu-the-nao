@@ -1,4 +1,4 @@
--- Bài 19. Tối ưu một truy vấn chậm bằng EXPLAIN ANALYZE
+-- Bài 21. Tối ưu một truy vấn chậm bằng EXPLAIN ANALYZE
 -- https://nguyenly.dev/khoa-hoc/database-index-hoat-dong-nhu-the-nao/toi-uu-truy-van-cham-postgresql
 \pset pager off
 

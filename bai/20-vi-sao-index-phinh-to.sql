@@ -1,4 +1,4 @@
--- Bài 18. Vì sao index phình to theo thời gian?
+-- Bài 20. Vì sao index phình to theo thời gian?
 -- https://nguyenly.dev/khoa-hoc/database-index-hoat-dong-nhu-the-nao/vi-sao-index-phinh-to
 -- Dùng một bảng riêng 200.000 xe (b), bảng vehicles không bị đụng tới.
 \pset pager off

@@ -44,18 +44,20 @@ docker compose exec db psql
 | [`10-index-nhieu-cot-hoat-dong-nhu-the-nao.sql`](bai/10-index-nhieu-cot-hoat-dong-nhu-the-nao.sql) | Index nhiều cột (composite index) hoạt động như thế nào? |
 | [`11-index-giup-order-by-limit-nhu-the-nao.sql`](bai/11-index-giup-order-by-limit-nhu-the-nao.sql) | Index giúp ORDER BY và LIMIT nhanh hơn thế nào? |
 | [`12-vi-sao-query-khong-tan-dung-index.sql`](bai/12-vi-sao-query-khong-tan-dung-index.sql) | Vì sao có index nhưng query không tận dụng được? |
-| [`13-vi-sao-like-khong-dung-index.sql`](bai/13-vi-sao-like-khong-dung-index.sql) | Vì sao LIKE vẫn quét cả bảng dù có index? |
-| [`14-postgresql-chon-index-hay-seq-scan.sql`](bai/14-postgresql-chon-index-hay-seq-scan.sql) | PostgreSQL quyết định dùng index hay Seq Scan thế nào? |
-| [`15-partial-index-la-gi.sql`](bai/15-partial-index-la-gi.sql) | Partial index là gì và khi nào nên dùng? |
-| [`16-vi-sao-index-lam-ghi-cham-hon.sql`](bai/16-vi-sao-index-lam-ghi-cham-hon.sql) | Vì sao index làm INSERT chậm hơn? |
-| [`17-update-trong-postgresql-hoat-dong-nhu-the-nao.sql`](bai/17-update-trong-postgresql-hoat-dong-nhu-the-nao.sql) | UPDATE trong PostgreSQL hoạt động như thế nào? |
-| [`18-vi-sao-index-phinh-to.sql`](bai/18-vi-sao-index-phinh-to.sql) | Vì sao index phình to theo thời gian? |
-| [`19-toi-uu-truy-van-cham-postgresql.sql`](bai/19-toi-uu-truy-van-cham-postgresql.sql) | Tối ưu một truy vấn chậm bằng EXPLAIN ANALYZE |
-| [`20-bai-tap.sql`](bai/20-bai-tap.sql) | Bài tập: tự lần theo một câu SQL |
+| [`13-vi-sao-like-khong-dung-index.sql`](bai/13-vi-sao-like-khong-dung-index.sql) | Vì sao LIKE không dùng index? |
+| [`14-pg-trgm-la-gi.sql`](bai/14-pg-trgm-la-gi.sql) | pg_trgm là gì? Tìm một đoạn giữa chuỗi bằng mẩu ba ký tự |
+| [`15-gin-index-la-gi.sql`](bai/15-gin-index-la-gi.sql) | GIN index là gì? Index đảo ngược tra từ mẩu ra dòng |
+| [`16-postgresql-chon-index-hay-seq-scan.sql`](bai/16-postgresql-chon-index-hay-seq-scan.sql) | PostgreSQL quyết định dùng index hay Seq Scan thế nào? |
+| [`17-partial-index-la-gi.sql`](bai/17-partial-index-la-gi.sql) | Partial index là gì và khi nào nên dùng? |
+| [`18-vi-sao-index-lam-ghi-cham-hon.sql`](bai/18-vi-sao-index-lam-ghi-cham-hon.sql) | Vì sao index làm INSERT chậm hơn? |
+| [`19-update-trong-postgresql-hoat-dong-nhu-the-nao.sql`](bai/19-update-trong-postgresql-hoat-dong-nhu-the-nao.sql) | UPDATE trong PostgreSQL hoạt động như thế nào? |
+| [`20-vi-sao-index-phinh-to.sql`](bai/20-vi-sao-index-phinh-to.sql) | Vì sao index phình to theo thời gian? |
+| [`21-toi-uu-truy-van-cham-postgresql.sql`](bai/21-toi-uu-truy-van-cham-postgresql.sql) | Tối ưu một truy vấn chậm bằng EXPLAIN ANALYZE |
+| [`22-bai-tap.sql`](bai/22-bai-tap.sql) | Bài tập: tự lần theo một câu SQL |
 
 ## Dữ liệu
 
-Bảng `vehicles` là 5 triệu xe giả của một website mua bán xe cũ: biển số, tỉnh, hãng, giá, ngày đăng, ngày bán. Dữ liệu sinh từ [`seed.sql`](seed.sql) với hạt giống cố định, nên máy nào cũng ra cùng một bảng. Hai bảng nhỏ `vehicles_10k` và `vehicles_200k` dùng để so sánh ở bài 1 và bài 2.
+Bảng `vehicles` là 5 triệu xe giả của một website mua bán xe cũ: biển số, tỉnh, hãng, giá, ngày đăng, ngày bán. Dữ liệu sinh từ [`seed.sql`](seed.sql) với hạt giống cố định, nên máy nào cũng ra cùng một bảng. Hai bảng nhỏ `vehicles_10k` và `vehicles_200k` dùng để so sánh ở bài 1 và bài 2, và để đo chi phí ghi ở bài 15.
 
 Số mili giây trên máy bạn sẽ khác số trong bài. Số page và số dòng thì giống hệt.
 
