@@ -12,11 +12,17 @@ DO $$ DECLARE i text; BEGIN
 END $$;
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
+\echo '--- Mẩu ba ký tự của 60055 (pg_trgm thêm khoảng trắng ở hai đầu)'
+SELECT show_trgm('60055');
+
 \echo '--- Một biển số cho 11 mẩu ba ký tự'
 SELECT show_trgm('47P-600.55'), array_length(show_trgm('47P-600.55'), 1) AS so_mau;
 
 \echo '--- Cắt riêng chuỗi 600.5 được 6 mẩu; mẫu LIKE %600.5% chỉ giữ 3: 600, "00 ", "  5"'
 SELECT show_trgm('600.5');
+
+\echo '--- 29A-1600.32 thiếu mẩu "  5"; 51A-600.45 đủ ba mẩu nhưng không chứa 600.5'
+SELECT show_trgm('29A-1600.32'), show_trgm('51A-600.45'), '51A-600.45' LIKE '%600.5%' AS khop;
 
 \echo '--- Số biển có từng mẩu, và có đủ cả ba (mất vài giây: cắt 5 triệu biển)'
 SELECT count(*) FILTER (WHERE t @> '{600}')               AS co_600,
@@ -40,24 +46,6 @@ EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM vehicles WHERE plate LIKE '%600%';
 \echo '--- Không mẩu nào: PostgreSQL đọc cả bảng'
 EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM vehicles WHERE plate LIKE '%60%';
 
-\echo '--- Mẩu luôn là chữ thường: cùng index phục vụ ILIKE'
-EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM vehicles WHERE plate ILIKE '%47p-600%';
-
-\echo '--- Gõ sai: LIKE không ra gì, độ giống thì có'
-SELECT count(*) FROM vehicles WHERE plate LIKE '%47P-6005%';
-SELECT show_trgm('47P-6005'),
-       similarity('47P-6005', '47P-600.55') AS do_giong,
-       '47P-6005' <-> '47P-600.55'          AS khoang_cach;
-
-\echo '--- 10 biển gần nhất, chưa có index GiST: đọc và xếp cả bảng'
-EXPLAIN (ANALYZE, BUFFERS) SELECT plate FROM vehicles ORDER BY plate <-> '47P-6005' LIMIT 10;
-
-\echo '--- Index GiST cho tìm gần nhất (mất khoảng 40 giây để tạo)'
-CREATE INDEX vehicles_plate_gist_idx ON vehicles USING gist (plate gist_trgm_ops);
-ANALYZE vehicles;
-EXPLAIN (ANALYZE, BUFFERS) SELECT plate FROM vehicles ORDER BY plate <-> '47P-6005' LIMIT 10;
-SELECT plate, round((plate <-> '47P-6005')::numeric, 3) AS khoang_cach
-FROM vehicles ORDER BY plate <-> '47P-6005' LIMIT 10;
-SELECT pg_size_pretty(pg_relation_size('vehicles_plate_trgm_idx')) AS gin,
-       pg_size_pretty(pg_relation_size('vehicles_plate_gist_idx')) AS gist;
-DROP INDEX vehicles_plate_gist_idx;
+\echo '--- Gõ thiếu dấu chấm: LIKE không ra xe nào, độ giống thì có (8 mẩu chung / 13 mẩu)'
+SELECT count(*) FROM vehicles WHERE plate LIKE '%47P-60055%';
+SELECT show_trgm('47P-60055'), similarity('47P-60055', '47P-600.55') AS do_giong;
