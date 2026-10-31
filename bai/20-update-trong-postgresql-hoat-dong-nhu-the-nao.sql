@@ -1,4 +1,4 @@
--- Bài 19. UPDATE trong PostgreSQL hoạt động như thế nào?
+-- Bài 20. UPDATE trong PostgreSQL hoạt động như thế nào?
 -- https://nguyenly.dev/khoa-hoc/database-index-hoat-dong-nhu-the-nao/update-trong-postgresql-hoat-dong-nhu-the-nao
 -- Dùng các bảng riêng 200.000 xe (u100, u90), bảng vehicles chỉ bị sửa trong một transaction rồi ROLLBACK.
 \pset pager off

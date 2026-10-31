@@ -1,4 +1,4 @@
--- Bài 18. Vì sao index làm INSERT chậm hơn?
+-- Bài 19. Vì sao index làm INSERT chậm hơn?
 -- https://nguyenly.dev/khoa-hoc/database-index-hoat-dong-nhu-the-nao/vi-sao-index-lam-ghi-cham-hon
 -- Dùng một bảng riêng vehicles_w, bảng vehicles không bị đụng tới.
 \pset pager off

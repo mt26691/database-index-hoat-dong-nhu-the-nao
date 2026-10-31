@@ -1,4 +1,4 @@
--- Bài 15. GIN index là gì? Tìm biển số chứa một đoạn bất kỳ như thế nào?
+-- Bài 15. GIN index là gì? Làm sao tìm nhanh một đoạn ký tự bất kỳ trong chuỗi?
 -- https://nguyenly.dev/khoa-hoc/database-index-hoat-dong-nhu-the-nao/gin-index-la-gi
 \pset pager off
 

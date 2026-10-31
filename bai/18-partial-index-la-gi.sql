@@ -1,4 +1,4 @@
--- Bài 17. Partial index là gì và khi nào nên dùng?
+-- Bài 18. Partial index là gì và khi nào nên dùng?
 -- https://nguyenly.dev/khoa-hoc/database-index-hoat-dong-nhu-the-nao/partial-index-la-gi
 \pset pager off
 -- Một tiến trình cho kế hoạch dễ đọc; số page vẫn như khi chạy song song.
