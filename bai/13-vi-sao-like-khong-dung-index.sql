@@ -20,26 +20,15 @@ EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM vehicles WHERE plate >= '47P-600' AND p
 SELECT datcollate FROM pg_database WHERE datname = current_database();
 EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM vehicles WHERE plate LIKE '47P-600%';
 
-\echo '--- Vì sao: en_US.utf8 bỏ qua dấu - khi sắp xếp, còn "C" so từng ký tự'
-SELECT x FROM unnest(ARRAY['A-B','AA','AB']) x ORDER BY x;
-SELECT x FROM unnest(ARRAY['A-B','AA','AB']) x ORDER BY x COLLATE "C";
-SELECT x FROM unnest(ARRAY['47P-600.55','47P600.00','47P-601.04','47P-599.99']) x ORDER BY x;
-SELECT x FROM unnest(ARRAY['47P-600.55','47P600.00','47P-601.04','47P-599.99']) x ORDER BY x COLLATE "C";
-
-\echo '--- Bảng vehicles không có biển số nào thiếu dấu gạch'
-SELECT count(*) AS khong_co_gach FROM vehicles WHERE plate NOT LIKE '%-%';
+\echo '--- Vì sao: thứ tự theo ngôn ngữ (en_US.utf8) đặt aB2 xen giữa ab1 và ab3; so từng ký tự ("C") thì không'
+SELECT x, x LIKE 'ab%' AS khop FROM unnest(ARRAY['ab1','aB2','ab3']) x ORDER BY x;
+SELECT x, x LIKE 'ab%' AS khop FROM unnest(ARRAY['ab1','aB2','ab3']) x ORDER BY x COLLATE "C";
 
 \echo '--- Index với lớp toán tử text_pattern_ops: LIKE theo phần đầu dùng được, 5 page'
 CREATE INDEX vehicles_plate_pattern_idx ON vehicles (plate text_pattern_ops);
 ANALYZE vehicles;
 EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM vehicles WHERE plate LIKE '47P-600%';
 DROP INDEX vehicles_plate_pattern_idx;
-
-\echo '--- Hoặc index theo collation C: LIKE viết trơn cũng dùng được'
-CREATE INDEX vehicles_plate_c_idx ON vehicles (plate COLLATE "C");
-ANALYZE vehicles;
-EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM vehicles WHERE plate LIKE '47P-600%';
-DROP INDEX vehicles_plate_c_idx;
 
 \echo '--- Tìm ở giữa chuỗi: không có phần đầu, B-tree không giúp được'
 EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM vehicles WHERE plate LIKE '%600.5%';
