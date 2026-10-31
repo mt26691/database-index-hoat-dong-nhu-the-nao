@@ -20,7 +20,9 @@ EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM vehicles WHERE plate >= '47P-600' AND p
 SELECT datcollate FROM pg_database WHERE datname = current_database();
 EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM vehicles WHERE plate LIKE '47P-600%';
 
-\echo '--- Vì sao: en_US.utf8 bỏ qua dấu - khi sắp xếp, còn "C" so từng byte'
+\echo '--- Vì sao: en_US.utf8 bỏ qua dấu - khi sắp xếp, còn "C" so từng ký tự'
+SELECT x FROM unnest(ARRAY['A-B','AA','AB']) x ORDER BY x;
+SELECT x FROM unnest(ARRAY['A-B','AA','AB']) x ORDER BY x COLLATE "C";
 SELECT x FROM unnest(ARRAY['47P-600.55','47P600.00','47P-601.04','47P-599.99']) x ORDER BY x;
 SELECT x FROM unnest(ARRAY['47P-600.55','47P600.00','47P-601.04','47P-599.99']) x ORDER BY x COLLATE "C";
 
@@ -39,16 +41,6 @@ ANALYZE vehicles;
 EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM vehicles WHERE plate LIKE '47P-600%';
 DROP INDEX vehicles_plate_c_idx;
 
-\echo '--- Tìm ở giữa chuỗi: B-tree không giúp được'
+\echo '--- Tìm ở giữa chuỗi: không có phần đầu, B-tree không giúp được'
 EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM vehicles WHERE plate LIKE '%600.5%';
 
-\echo '--- pg_trgm cắt chuỗi thành các mẩu ba ký tự'
-CREATE EXTENSION IF NOT EXISTS pg_trgm;
-SELECT show_trgm('600.5');
-
-\echo '--- Index GIN trên các mẩu ba ký tự, mất vài giây để tạo'
-CREATE INDEX vehicles_plate_trgm_idx ON vehicles USING gin (plate gin_trgm_ops);
-ANALYZE vehicles;
-EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM vehicles WHERE plate LIKE '%600.5%';
-SELECT pg_size_pretty(pg_relation_size('vehicles_plate_idx'))      AS btree,
-       pg_size_pretty(pg_relation_size('vehicles_plate_trgm_idx')) AS gin_trgm;

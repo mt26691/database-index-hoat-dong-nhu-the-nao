@@ -26,6 +26,9 @@ SELECT count(*) FILTER (WHERE t @> '{600}')               AS co_600,
        round(avg(array_length(t, 1)), 1)                  AS mau_moi_bien
 FROM (SELECT show_trgm(plate) AS t FROM vehicles) s;
 
+\echo '--- Chưa có index: quét cả 192.308 page'
+EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM vehicles WHERE plate LIKE '%600.5%';
+
 \echo '--- Index GIN trên các mẩu: 1.008 ứng viên, kiểm lại LIKE còn 500'
 CREATE INDEX vehicles_plate_trgm_idx ON vehicles USING gin (plate gin_trgm_ops);
 ANALYZE vehicles;
