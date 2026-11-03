@@ -52,9 +52,10 @@ docker compose exec db psql
 | [`18-partial-index-la-gi.sql`](bai/18-partial-index-la-gi.sql) | Partial index là gì và khi nào nên dùng? |
 | [`19-vi-sao-index-lam-ghi-cham-hon.sql`](bai/19-vi-sao-index-lam-ghi-cham-hon.sql) | Vì sao index làm INSERT chậm hơn? |
 | [`20-update-trong-postgresql-hoat-dong-nhu-the-nao.sql`](bai/20-update-trong-postgresql-hoat-dong-nhu-the-nao.sql) | UPDATE trong PostgreSQL hoạt động như thế nào? |
-| [`21-vi-sao-index-phinh-to.sql`](bai/21-vi-sao-index-phinh-to.sql) | Vì sao index phình to theo thời gian? |
-| [`22-toi-uu-truy-van-cham-postgresql.sql`](bai/22-toi-uu-truy-van-cham-postgresql.sql) | Tối ưu một truy vấn chậm bằng EXPLAIN ANALYZE |
-| [`23-bai-tap.sql`](bai/23-bai-tap.sql) | Bài tập: tự lần theo một câu SQL |
+| [`21-hot-update-la-gi.sql`](bai/21-hot-update-la-gi.sql) | HOT update là gì? |
+| [`22-vi-sao-index-phinh-to.sql`](bai/22-vi-sao-index-phinh-to.sql) | Vì sao index phình to theo thời gian? |
+| [`23-toi-uu-truy-van-cham-postgresql.sql`](bai/23-toi-uu-truy-van-cham-postgresql.sql) | Tối ưu một truy vấn chậm bằng EXPLAIN ANALYZE |
+| [`24-bai-tap.sql`](bai/24-bai-tap.sql) | Bài tập: tự lần theo một câu SQL |
 
 ## Dữ liệu
 

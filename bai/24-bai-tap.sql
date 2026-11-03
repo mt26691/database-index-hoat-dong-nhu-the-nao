@@ -1,4 +1,4 @@
--- Bài 23. Bài tập: tự lần theo một câu SQL
+-- Bài 24. Bài tập: tự lần theo một câu SQL
 -- https://nguyenly.dev/khoa-hoc/database-index-hoat-dong-nhu-the-nao/bai-tap
 -- Nên gõ từng bài tập trong psql và tự trả lời câu hỏi trước khi xem đáp án.
 -- File này chạy cả sáu bài tập liền một lượt, để đối chiếu số.
