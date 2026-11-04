@@ -21,14 +21,9 @@ UPDATE u100 SET seller_note = seller_note || ' Đã kiểm tra.' WHERE id % 10 =
 UPDATE u90  SET seller_note = seller_note || ' Đã kiểm tra.' WHERE id % 10 = 0;
 SELECT pg_stat_force_next_flush();
 SELECT relname, n_tup_upd, n_tup_hot_upd,
-       round(100.0 * n_tup_hot_upd / n_tup_upd, 1) AS phan_tram_hot,
-       n_tup_newpage_upd AS sang_page_khac
-FROM pg_stat_user_tables WHERE relname IN ('u100', 'u90') ORDER BY relname DESC;
-
-\echo '--- Sửa biển số (cột có index) của 20.000 xe khác trên u90: gần hết phiên bản mới vẫn nằm trong page cũ, nhưng số lần HOT không tăng'
-UPDATE u90 SET plate = '99A-' || lpad(id::text, 6, '0') WHERE id % 10 = 1;
-SELECT pg_stat_force_next_flush();
-SELECT relname, n_tup_upd, n_tup_hot_upd, n_tup_newpage_upd AS sang_page_khac
-FROM pg_stat_user_tables WHERE relname = 'u90';
+       round(100.0 * n_tup_hot_upd / NULLIF(n_tup_upd, 0), 1) AS phan_tram_hot
+FROM pg_stat_user_tables
+WHERE relname IN ('u100', 'u90')
+ORDER BY relname DESC;
 
 DROP TABLE u100, u90;
